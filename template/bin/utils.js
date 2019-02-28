@@ -1,331 +1,243 @@
-var os = require('os')
-var path = require('path')
-var glob = require('glob')
-var fs = require('fs')
-var webpack = require('webpack')
-var config = require('./config.js')
-var assign = require('object-assign')
-var shell = require('shelljs')
-var colors = require('colors')
+const $path = require('path')
+const $fs = require('fs')
+const glob = require('glob')
+const prettyjson = require('prettyjson')
 
-function resolve(dir) {
-  return path.join(__dirname, '..', dir)
+require('colors')
+
+/**
+ * 判断是否是对象
+ * @param {Object} obj
+ * @return {Boolean}
+ */
+const isPlainObj = function (obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]'
 }
 
-function assetsPath(filepath) {
-  var dir = process.env.NODE_ENV === 'production' ? config.prod.assetsRoot : config.dev.assetsRoot
-  return path.posix.join(dir, filepath)
-}
+exports.isPlainObj = isPlainObj
 
-exports.getEntries = function(extensions, options) {
-  const res = {}
-  options = options || {}
-  const verbose = options.verbose || true
-  extensions = extensions || ['.js']
-  extensions.forEach(function(validExt) {
-    const srcDir = config.paths.src
-    const files = glob.sync(srcDir + "/**/*" + validExt, options).filter(function(filepath) {
-      const extension = path.extname(filepath)
-      const basename = path.basename(filepath, validExt)
-      if (extension != validExt) return false
-      if (!options.noskip && basename[0] == '_') return false
-      if (!basename.match(/^[A-Za-z_0-9-]+$/)) return false
-      /**
-       * file is not an entry if it's content
-       * start with not entry multiline comment
-       */
-      var buf = new Buffer(13)
-      var fd = fs.openSync(filepath, 'r')
-      fs.readSync(fd, buf, 0, 13)
-      var directive = buf.toString()
-      fs.closeSync(fd)
-      return directive !== '/*not entry*/'
-    })
-    const includes = options.includes ? options.includes.split(',') : null
-    console.log('includes for ', extensions, includes)
-    const excludes = options.excludes ? options.excludes.split(',') : null
-    console.log('excludes for ', extensions, excludes)
-    files.forEach(function(filepath) {
-      var key = path.relative(options.baseDir || config.paths.src, filepath)
-      key = key.replace(validExt, '')
-      if (includes) {
-        if (includes.indexOf(key) < 0) return
-      } else if (excludes) {
-        if (excludes.indexOf(key) >= 0) return
-      }
-      res[key] = filepath
-    })
-  })
-  if (verbose) {
-    console.log(('Entries for ' + extensions.join(' and ')).cyan.bold)
-    for (var k in res) {
-      console.log(k.green, '=>\n  ', res[k].yellow)
-    }
-  }
-  if (!Object.keys(res).length) {
-    console.error('!!!Got no entry for ' + extensions + '!!!')
-  }
-  return res
-}
-
-const ImageNames = {
-  dev: 'img/[name].[ext]',
-  prod: 'img/[name]-[hash:7].[ext]'
-}
-exports.getImageLoader = function(env, limit) {
-  return {
-    test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-    loader: 'url-loader',
-    query: {
-      emitFile: true,
-      limit: limit || 10000,
-      name: ImageNames[env]
-    }
-  }
-}
-
-const FontNames = {
-  dev: 'fonts/[name].[ext]',
-  prod: 'fonts/[name]-[chunkhash].[ext]'
-}
-
-exports.getFontsLoader = function(env, limit) {
-  return {
-    test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-    loader: 'url-loader',
-    query: {
-      limit: limit || 10000,
-      name: FontNames[env]
-    }
-  }
-}
-
-exports.getJsLoader = function(jsPattern, opts) {
-  const config = {
-    test: jsPattern || /\.js$/,
-    loader: 'babel-loader'
-  }
-  return Object.assign(config, opts)
-}
-
-exports.getVueLoader = function (env, options) {
-  const loader = {
-    test: /\.vue$/,
-    loader: 'vue-loader'
-  }
-  if (options) {
-    loader.options = options
-  }
-  return loader
-}
-
-const CssNames = {
-    dev: '[name].css',
-    prod: '[name]-[chunkhash].css'
-  }
-  /**
-   * this loader compile stylus files into css files
-   * @param  {Boolean} withPlugin
-   * @return {Object} [{test,loader} | {loader,plugins}]
-   */
-exports.getStylusLoaderMaybeWithPlugin = function(withPlugin, env) {
-  const test = /\.styl$/
-  var loader
-  if (withPlugin) {
-    var ExtractTextPlugin = require('extract-text-webpack-plugin')
-    var loaderStr = env == 'dev' ?
-      'css-loader!stylus-loader' : 'css-loader?minimize=true!stylus-loader'
-    return {
-      loader: {
-        test: test,
-        loader: ExtractTextPlugin.extract({
-          use: loaderStr,
-          remove: false
-        })
-      },
-      plugins: [
-        new ExtractTextPlugin(CssNames[env])
-      ]
-    }
-  } else {
-    // plain stylus loader
-    // insert css as style node into DOM
-    return {
-      test: test,
-      loader: 'style-loader!css-loader!stylus-loader'
-    }
-  }
-}
-
-exports.getLessLoader = function (env) {
-  var loaderStr = env == 'dev' ?
-    'style-loader!css-loader!less-loader' : 'style-loader!css-loader?minimize=true!less-loader'
-  return {
-    test: /\.less$/,
-    loader: loaderStr
-  }
-}
-
-function try_require(path_) {
-  var json = {}
-  try {
-    if (fs.existsSync(path_)) {
-      json = require(path_)
-    }
-  } catch (e) {}
-  return json
+/**
+ * 判断是否是正则表达式
+ * @param {RegExp} regexp
+ * @return {Boolean}
+*/
+const isRegExp = function (regexp) {
+  return Object.prototype.toString.call(regexp) === '[object RegExp]'
 }
 
 /**
- * this loader just copy jade file to views for express
- * @param  {Boolean} withPlugin
- * @param  {String} env ['dev' | 'prod']
- * @return {Object} [{test,loader} | {loader,plugins}]
+ * 转换为常量风格的变量命名类型， 如 aBbCcc ---> A_BB_CCC
+ * @param {*} str
  */
-exports.getJadeLoaderPluginMaybeWithPlugin = function(withPlugin, env) {
-  const test = /\.jade$/
-  var manifest = null
-  if (withPlugin) {
-    var ExtractTextPlugin = require('extract-text-webpack-plugin')
-    return {
-      loader: {
-        test: test,
-        loader: ExtractTextPlugin.extract({
-          use: {
-            loader: 'jade-url-replace-loader',
-            options: {
-              attrs: ['a:href', 'img:src','script:src','link:href'],
-              getEmitedFilePath: function (url) {
-                if (env == 'dev') return url
-                if (!manifest) {
-                  var assetsRoot = config[env].assetsRoot
-                  var m1 = try_require(path.join(assetsRoot, 'manifest-js.json'))
-                  var m2 = try_require(path.join(assetsRoot, 'manifest-stylus.json'))
-                  var m3 = try_require(path.join(assetsRoot, 'manifest-img.json'))
-                  manifest = assign({}, m1, m2, m3)
-                  console.log()
-                  console.log('Process view files')
-                  console.log('Manifest from previous compilation:')
-                  for (var file in manifest) {
-                    console.log(' ' + file.green + ' => \n   ' + manifest[file].yellow)
-                  }
-                }
-                var hashed = manifest[url]
-                if (hashed) {
-                  return hashed
-                } else {
-                  if (url.indexOf('/lib/') < 0) {
-                    if (url.indexOf('javascript:;') === 0 ||
-                      url.indexOf('mailto:') === 0 ||
-                      url.indexOf('http') === 0 ||
-                      url.indexOf('#{') === 0) {
-                        //do not care above url
-                    }  else {
-                      console.warn('Not found ' + url + ' in manifest files'.magenta)
-                    }
-                  }
-                  return url
-                }
-              }
-            }
-          }
-        })
-      },
-      plugins: [
-        new ExtractTextPlugin('[name].jade')
-      ]
-    }
-  } else {
-    // plain jade loader
-    // return a render function
-    return {
-      test: test,
-      loader: 'jade-loader'
-    }
+const constCase = function (str) {
+  return str.replace(/[A-Z]/g, function (match) {
+    return '_' + match.toLowerCase()
+  }).toUpperCase()
+}
+
+exports.constCase = constCase
+
+/**
+ * 转换为数组
+ * @param {*} val
+ * @return {Array}
+ */
+const toArray = function (val) {
+  return Array.isArray(val) ? val : val ? [val] : []
+}
+
+exports.toArray = toArray
+
+/**
+ * 函数只执行一次
+ * @param {Function} func
+ * @retrun {Function}
+ */
+const once = function (func) {
+  let called = false
+
+  return function (...args) {
+    if (called) return
+    called = true
+    return func.apply(this, args)
   }
 }
 
-const ansiRegex = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-PRZcf-nqry=><]/g
-var FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
-var WebpackNotifierPlugin = require('webpack-notifier');
-exports.getWebpackDevHelperPlugins = function(title, opts) {
-  opts = opts || {}
-  opts.title = (opts.title || title).replace(ansiRegex, '')
-  return [
-    new FriendlyErrorsPlugin(),
-    new WebpackNotifierPlugin(opts)
-  ]
-}
+exports.once = once
 
-var WebpackMd5Hash = require('webpack-md5-hash');
-exports.getWebpackProdHelpPlugins = function() {
-  const plugins = [
-    new webpack.optimize.UglifyJsPlugin({
-      compress: {
-        warnings: false
+/**
+ * @description 寻找指定后缀的文件名
+ * @param {String} ext 后缀
+ * @param {*} opts glob 配置项， 新增了 skips, includes, excludes, path
+ *  path: 寻找的路径
+ *  skips: 可以跳过的项， Array 类型， 元素支持 String 和 RegExp； String 类型时， 忽略以该 string 开头的文件
+ *  includes: 指定后， 不再扫描 path 下的所有文件， 只是去寻找 include 的文件
+ *  excludes: 指定后， 扫描时排除这些文件， includes 存在时， 该项不生效
+ */
+const getFilesByExt = function (ext, opts) {
+  const map = {}
+  const { path: basePath, skips: _skip, verbose, includes: _includes, excludes: _excludes } = opts
+  const skips = toArray(_skip)
+  const includes = toArray(_includes)
+  const excludes = toArray(_excludes)
+  const canSkip = function (name) {
+    name = $path.basename(name, $path.extname(name))
+    return skips.some(skip => {
+      if (typeof skip === 'string') {
+        return name.startsWith(skip)
+      } else if (isRegExp(skip)) {
+        return skip.test(name)
+      } else {
+        throw new Error('Error: Skips can only contain String or RegExp type')
       }
-    }),
-    new webpack.optimize.OccurrenceOrderPlugin(),
-    new WebpackMd5Hash()
-  ]
-  return plugins
-}
-
-var CopyWebpackPlugin = require('copy-webpack-plugin')
-var crypto = require('crypto')
-var manifsetImg = {}
-exports.getCopyPlugins = function (env, assetsPublicPath) {
-  var tpl = env === 'dev' ? '[path][name].[ext]' : '[path][name]-[hash:7].[ext]'
-  return new CopyWebpackPlugin([{
-    context: path.join(config.paths.src, 'img'),
-    from: '**/*',
-    to: path.join(config[env].assetsRoot, 'img/' + tpl),
-    transform: function (content, filepath) {
-      var hash = crypto.createHash('md5').update(content).digest('hex').slice(0, 7)
-      var ext = path.extname(filepath)
-      var dir = path.dirname(filepath)
-      var basename = path.basename(filepath, ext)
-      if (basename[basename.length - 1] == '_') return content
-      var relativePath = path.relative(config.paths.src, dir)
-      var imgPathNoHash = relativePath + '/' + basename + ext
-      var imgPath = relativePath + '/' + basename + '-' + hash + ext
-      manifsetImg[assetsPublicPath + imgPathNoHash] = assetsPublicPath + imgPath
-      fs.writeFileSync(path.join(config[env].assetsRoot, 'manifest-img.json'), JSON.stringify(manifsetImg, null, 2))
-      return content
-    }
-  }, {
-    from: path.join(config.paths.src, 'css/lib'),
-    to: path.join(config[env].assetsRoot, 'css/lib')
-  }, {
-    from: path.join(config.paths.src, 'js/lib'),
-    to: path.join(config[env].assetsRoot, 'js/lib')
-  }, {
-    from: path.join(config.paths.src, 'fonts'),
-    to: path.join(config[env].assetsRoot, 'fonts')
-  }{{#sitemap}}, {
-    from: path.join(config.paths.src, 'html/sitemap.xml'),
-    to: path.join(config.paths.views, 'sitemap.xml')
-  }{{/sitemap}}])
-}
-
-exports.safeRm = function (_path) {
-  var err = false
-  if (_path == "/") err = true
-  if (_path.toLowerCase() == os.homedir()) err = true
-  if (path.relative(config.paths.root, _path).indexOf('../') == 0) err = true
-  if (err) {
-    console.error(_path, ' is not contained in project folder, will not remove!')
-    return
-  } else {
-    try {
-      console.info('try to remove ', _path)
-      shell.rm('-r', _path)
-      console.info('done!')
-    } catch (err) {
-      console.error('FATAL:', err)
-    }
+    })
   }
+
+  if (includes.length) {
+    includes.forEach(include => {
+      const key = include.replace(new RegExp(ext + '$'), '')
+      map[key] = $path.resolve(basePath, key + ext)
+    })
+    console.log(`Includes works! ${includes}`.magenta.red)
+  } else {
+    glob.sync('/**/*' + ext, Object.assign({}, opts, {
+      root: basePath
+    })).filter(filename => {
+      const name = $path.basename(filename)
+      const noskip = !canSkip(name) && (excludes.length && excludes.indexOf(name) < 0 || !excludes.length)
+
+      if (noskip) {
+        const key = $path.relative(basePath, filename).replace(ext, '')
+        map[key] = filename
+      }
+
+      return noskip
+    })
+  }
+
+  if (verbose) {
+    console.log(`Extension [${ext}]:\n`.bold.blue + prettyjson.render(map) + '\n')
+  }
+
+  return map
 }
 
-exports.assetsPath = assetsPath
-exports.resolve = resolve
+exports.getFilesByExt = getFilesByExt
+
+/**
+ * @description 获取 jade 中指定标签的属性
+ * @content {String} jade 文件的内容
+ * @attributes {Array} 指定的标签及其属性
+ * @return {Array} 寻找到的 urls
+ */
+const getJadeUrl = function (content, attributes) {
+  const Parser = require('fastparse')
+  const isRelevantTagAttr = function(tag, attr) {
+    return attributes.indexOf(tag + ":" + attr) >= 0;
+  }
+  const processMatch = function(match, strUntilValue, name, value, index) {
+    if(!isRelevantTagAttr(this.currentTag, name)) return;
+    this.results.push({
+      start: index + strUntilValue.length,
+      length: value.length,
+      value: value
+    });
+  };
+
+  const parser = new Parser({
+    outside: {
+      '([a-zA-Z\\-:]+)([\\.#a-zA-Z0-9\\-_]*)\\(\\s*': function (match, tagName, classAndId) {
+        this.currentTag = tagName
+        this.classAndId = classAndId
+        return 'inside'
+      }
+    },
+    inside: {
+      '\\s+': true,
+      '\\)': 'outside',
+      "(([0-9a-zA-Z\\-:\.]+)\\s*=\\s*\")([^\"]*)\"": processMatch,
+      "(([0-9a-zA-Z\\-:\.]+)\\s*=\\s*\')([^\']*)\'": processMatch,
+      "(([0-9a-zA-Z\\-:\.]+)\\s*=\\s*)([^\\s\\)]+)": processMatch
+    }
+  })
+
+  return parser.parse('outside', content, { results: [] }).results
+}
+
+exports.getJadeUrl = getJadeUrl
+
+/**
+ * @description 根据 jade 文件获取 entries
+ * @src {String} html 文件的路径， 只会从该路径下寻找 html 文件
+ * @assetsPublicPath
+ */
+const getEntriesByJade = function (src, assetsPublicPath, options) {
+  const includes = options.includes ? options.includes.split(',') : null
+  const excludes = options.excludes ? options.excludes.split(',') : null
+  const jade = getFilesByExt('.jade', {
+    path: $path.join(src, 'html'),
+    skips: ['_'],
+    verbose: true,
+    includes,
+    excludes
+  })
+  const jadeFiles = Object.values(jade)
+  const entries = {
+    '.jade': jade
+  }
+
+  jadeFiles.forEach(file => {
+    const fileContent = $fs.readFileSync(file)
+    const urls = getJadeUrl(fileContent, ['img:src', 'script:src', 'link:href'])
+
+    urls.forEach(url => {
+      const extname = $path.extname(url.value)
+      const entry = url.value.replace(new RegExp('^' + assetsPublicPath), '')
+      const entryKey = $path.join(...entry.split($path.sep).slice(1)).replace(new RegExp(extname + '$'), '')
+
+      if (!entries[extname])
+        entries[extname] = {}
+
+      entries[extname][entryKey] = $path.join(src, entry)
+    })
+  })
+
+  return entries
+}
+
+exports.getEntriesByJade = getEntriesByJade
+
+const getFilename = function (isdev, ischunk, ext = 'js',  path = '') {
+  const hash = isdev ? ''
+              : typeof ischunk === 'string' ? '-' + ischunk
+              : !!ischunk ? '-[chunkhash]' : '-[hash]'
+  return $path.join(path, `[name]${hash}.${ext}`)
+}
+
+exports.getFilename = getFilename
+
+const webpackCallback = function (err, stats, cb) {
+  if (err) {
+    console.error(err.stack || err);
+    if (err.details) {
+      console.error(err.details);
+    }
+    return
+  }
+
+  const info = stats.toJson('minimal');
+
+  if (stats.hasErrors()) {
+    console.error(info.errors);
+  }
+
+  if (stats.hasWarnings()) {
+    console.warn(info.warnings);
+  }
+
+  process.stdout.write(prettyjson.render(info) + '\n')
+
+  cb && cb()
+}
+
+exports.webpackCallback = webpackCallback

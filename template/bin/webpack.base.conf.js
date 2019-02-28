@@ -1,103 +1,76 @@
-var webpack = require('webpack')
-var path = require('path')
-var colors = require('colors')
-var utils = require('./utils.js')
-var config = require('./config.js')
-var pkg = require('../package.json')
-
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const env = process.env.NODE_ENV === 'development' ? 'dev' : 'prod'
+const config = require('./config')
+const { isdev, paths: { src, cache }, env, [env]: { assetsRoot, publicPath } } = config
+const base = require('./base')
+const loaders = require('./loaders')
+const plugins = require('./plugins')
+const loaderWithPlugins = require('./loader-with-plugins')
+const { getFilesByExt, getFilename } = require('./utils')
 
 const configs = []
-const imageLoader = utils.getImageLoader(env)
-const fontLoader = utils.getFontsLoader(env)
-const lessLoader = utils.getLessLoader(env)
-const vueLoader = utils.getVueLoader(env, {
-  loaders: {
-    i18n: '@kazupon/vue-i18n-loader'
-  }
-})
-const jsLoader = utils.getJsLoader(/\.jsx?$/, {
-  exclude: /node_modules/,
-  include: config.paths.src,
-  query: {
-    cacheDirectory: path.resolve(config.paths.build, 'tmp')
-  }
-})
 
-var stylusLoader = utils.getStylusLoaderMaybeWithPlugin(false, env, env)
-configs.push({
-  name: ' JavaScript '.yellow.bold.inverse,
-  target: 'web',
-  context: config.paths.root,
-  output: {
-    path: config[env].assetsRoot,
-    filename: env == 'dev' ? '[name].js' : '[name]-[chunkhash].js',
-    publicPath: config[env].assetsPublicPath
-  },
-  entry: utils.getEntries(['.js'], {
-    includes: process.env.WEBPACKINCLUDES,
-    excludes: process.env.WEBPACKEXCLUDES
-  }),
-  resolve: {
-    extensions: ['.js'],
-    alias: config.alias
-  },
-  module: {
-    rules: [{
-      test: /\.css$/,
-      loader: "style-loader!css-loader"
-    },imageLoader, fontLoader, jsLoader, vueLoader, stylusLoader, lessLoader]
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-    }),
-    utils.getCopyPlugins(env, config[env].assetsPublicPath)
-  ]
-})
+const jsLoader = loaders.getJsLoaders(cache)
+const stylLoader = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, false)
+const imgLoader = loaders.getImgLoaders(isdev)
+const fontLoader = loaders.getFontLoaders(isdev)
+const mediaLoader = loaders.getMediaLoaders(isdev)
 
-//stylus
-var stylusLoaderAndPlugins = utils.getStylusLoaderMaybeWithPlugin(true, env)
-configs.push({
-  name: ' Stylesheet '.cyan.bold.inverse,
-  target: 'web',
-  context: config.paths.root,
-  entry: utils.getEntries(['.styl']),
+const copyPlugin = plugins.getCopyPlugin(isdev)
+const definePlugin = plugins.getDefinePlugin()
+const cleanPlugin = plugins.getCleanPlugin(assetsRoot)
+
+const vueLoaderWithPlugins = loaderWithPlugins.getVueLoaderWithPlugins()
+const stylLoaderAndPlugins = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, true)
+const stlyLoaderWithPluginsAsEntryHandler = loaderWithPlugins.getStlyLoaderMaybeWithPluginsAsEntryHandler(isdev, true)
+const jadeLoaderWithPlugins = loaderWithPlugins.getJadeLoaderWithPlugins(isdev, assetsRoot)
+
+// javascript
+configs.push(Object.assign({}, base, {
+  entry: getFilesByExt('.js', { path: src, skips: ['_', /\./] }),
   output: {
-    path: config[env].assetsRoot,
-    filename: env == 'dev' ? '[name].css' : '[name]-[chunkhash].css',
-    publicPath: config.dev.assetsPublicPath
+    path: assetsRoot,
+    filename: getFilename(isdev, true, 'js'),
+    chunkFilename: isdev ? '[id].js' : '[id]-[chunkhash].js',
+    publicPath,
   },
   resolve: {
-    modules: ["node_modules"]
+    alias: config.alias,
+    modules: ['node_modules'],
+    mainFields: ['main', 'module', 'browser'],
+    extensions: ['.js', '.json']
+  },
+  externals: config.externals,
+  module: {
+    rules: [jsLoader, stylLoader, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loader]
+  },
+  plugins: [definePlugin, cleanPlugin, copyPlugin, ...vueLoaderWithPlugins.plugins]
+}))
+
+// stylus
+configs.push(Object.assign({}, base, {
+  entry: getFilesByExt('.styl', { path: src, skips: ['_'] }),
+  output: {
+    path: assetsRoot,
+    filename: getFilename(isdev, true, 'css'),
+    publicPath
   },
   module: {
-    rules: [imageLoader, fontLoader, stylusLoaderAndPlugins.loader]
+    rules: [stlyLoaderWithPluginsAsEntryHandler.loader, imgLoader, fontLoader]
   },
-  plugins: stylusLoaderAndPlugins.plugins
-})
+  plugins: [...stlyLoaderWithPluginsAsEntryHandler.plugins]
+}))
 
 // jade
-const jadeLoaderAndPlugins = utils.getJadeLoaderPluginMaybeWithPlugin(true, env)
-configs.push({
-  name: ' Jade '.magenta.bold.inverse,
-  target: 'node',
-  context: config.paths.root,
-  entry: utils.getEntries(['.jade'], {
-    noskip: true,
-    verbose: true,
-    baseDir: path.join(config.paths.src, 'html')
-  }),
+configs.push(Object.assign({}, base, {
+  entry: getFilesByExt('.jade', { path: src }),
   output: {
-    path: path.resolve(config.paths.root, 'views'),
-    filename: '[name].jade',
-    publicPath: config[env].assetsPublicPath
+    path: assetsRoot,
+    filename: getFilename(true, false, 'jade'),
+    publicPath
   },
   module: {
-    rules: [stylusLoaderAndPlugins.loader,imageLoader, fontLoader, jadeLoaderAndPlugins.loader]
+    rules: [jadeLoaderWithPlugins.loader, imgLoader, fontLoader, mediaLoader, stylLoader]
   },
-  plugins: jadeLoaderAndPlugins.plugins
-})
+  plugins: [...jadeLoaderWithPlugins.plugins]
+}))
 
 module.exports = configs

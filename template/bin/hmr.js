@@ -1,59 +1,86 @@
-var webpack = require('webpack')
-var colors = require('colors')
-var webpackConfigs = require('./webpack.dev.conf.js')
-var utils = require('./utils.js')
-var config = require('./config.js')
-module.exports = function (app, staticPath) {
-    // utils.safeRm(staticPath)
-    // utils.safeRm(config.paths.views)
-    [webpackConfigs[0]].forEach(function (c) {
-      c.stats = 'normal'
-      Object.keys(c.entry).forEach(function (name) {
-        c.entry[name] = ['./bin/dev-client.js'].concat(c.entry[name])
-      })
-      c.plugins.push(
-        new webpack.HotModuleReplacementPlugin({
-          multiStep: !!process.env.MULTISTEP
-        }),
-        new webpack.NoEmitOnErrorsPlugin()
-      )
+require('colors')
+const webpack = require('webpack')
+const webpackDevMiddleware = require('webpack-dev-middleware')
+const webpackHotMiddleware = require("webpack-hot-middleware")
 
-      var compiler = webpack(c)
-      app.use(require("webpack-dev-middleware")(compiler, {
-        noInfo: false,
-        publicPath: '/static/',
-        stats: {
-          colors: true,
-          chunks: false
-        }
-      }));
+const configs = require('./webpack.dev.conf')
+const { isPlainObj, webpackCallback } = require('./utils')
 
-      var hotMiddleware = require('webpack-hot-middleware')(compiler, {
-        log: console.log,
-        heartBeat: 5 * 1000
-      })
-      app.use(hotMiddleware)
+module.exports = function (app, publicPath) {
+  const js = configs[0]
+  const useDevMiddleware = compiler => {
+    app.use(webpackDevMiddleware(compiler, {
+      noInfo: true,
+      publicPath,
+      lazy: false,
+      logLevel: 'info', // debug
+    }))
+  }
 
-      compiler.plugin('compilation', function (compilation) {
-        compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
-          hotMiddleware.publish({ action: 'reload' })
-          cb()
-        })
+  if (process.env.HMR) {
+    console.log('Using HMR')
+    const jsEntries = js.entry
+    const devclient = '../bin/dev-client.js'// require('webpack-hot-middleware/client')
+
+    js.plugins = js.plugins.concat([
+      new webpack.HotModuleReplacementPlugin(),
+      new webpack.optimize.OccurrenceOrderPlugin(),
+      new webpack.NoEmitOnErrorsPlugin()
+    ])
+    if (isPlainObj(jsEntries)) {
+      Object.keys(jsEntries).forEach(entry => {
+        jsEntries[entry] = [devclient].concat(jsEntries[entry])
       })
+    } else if (Array.isArray(js.entry) ||
+      typeof js.entry === 'string') {
+      js.entry = [devclient].concat(js.entry)
+    } else {
+      throw new Error('[Error]: configs[0].entry error: ' + js.entry)
+    }
+
+    const compiler = webpack(js)
+
+    useDevMiddleware(compiler)
+
+    app.use(webpackHotMiddleware(compiler, {
+      path: publicPath,
+      timeout: 3000,
+      overlay: true,
+      reload: true,
+      noInfo: false,
+      quiet: false,
+      autoConnect: true,
+      heartbeat: 1000
+    }))
+  } else {
+    const compiler = webpack(js)
+    useDevMiddleware(compiler)
+  }
+
+  if (process.env.PARALLEL) {
+    const run = require('parallel-webpack').run
+
+    run(require.resolve('./webpack.dev.conf'), {
+      watch: true,
+      maxRetries: 3,
+      stats: true,
+      maxConcurrentWorkers: 2
     })
-    console.log(`WEBPACK=${String(process.env.WEBPACK)}`)
-    if (String(process.env.WEBPACK) === 'js') {
+  } else {
+    webpack(configs.slice(0, 1), webpackCallback)
+
+    if (process.env.WEBPACK === 'js') {
       console.log('Only compile js'.red.bold)
     } else {
-      webpack(webpackConfigs.slice(1), function (err, stats) {
-        if (err) {
-          console.error(err.stack || err)
-          if (err.details) {
-            console.error(err.details)
-          }
-        } else {
-          process.stdout.write(stats.toString('normal') + '\n\n')
-        }
+      // callback hell
+      webpack(configs.slice(1), function (err, stats) {
+        webpackCallback(err, stats, function () {
+          console.log('Compile all completely!!!'.bold.green)
+        })
       })
     }
+  }
 }
+
+
+

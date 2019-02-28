@@ -1,28 +1,23 @@
-var webpack = require('webpack')
-var utils = require('./utils.js')
-var merge = require('webpack-merge')
-var config = require('./config.js')
-var baseWebpackConfigs = require('./webpack.base.conf')
+const merge = require('webpack-merge')
+const baseConfs = require('./webpack.base.conf')
+const plugins = require('./plugins')
+const devPlugins = plugins.getDevHelperPlugins()
 
-var wpconfig = {
-  devtool: '#eval-source-map',
-  externals: config.externals,
+const devConfig = {
+  devtool: 'heap-module-eval-source-map',
   watch: true,
   watchOptions: {
-    ignored: /node_modules/
+    ignored: [/node_modules/],
+    aggregateTimeout: 800,
   }
 }
 
-baseWebpackConfigs.forEach(function (c) {
-  var plugins = utils.getWebpackDevHelperPlugins(c.name)
-  if (typeof c.plugins == 'undefined') {
-    c.plugins = plugins
+module.exports = baseConfs.map((conf, i) => {
+  if (typeof conf.plugins === 'undefined') {
+    conf.plugins = devPlugins
   } else {
-    c.plugins = c.plugins.concat(plugins)
+    conf.plugins = conf.plugins.concat(devPlugins)
   }
-})
 
-baseWebpackConfigs[0] = merge(baseWebpackConfigs[0], wpconfig)
-baseWebpackConfigs[1].watch = true
-baseWebpackConfigs[2].watch = true
-module.exports = baseWebpackConfigs
+  return merge(conf, devConfig)
+})
