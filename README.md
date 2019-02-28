@@ -1,35 +1,9 @@
-A Multi-page Vue project template
-====
+# mpa-template
+A multi-page template
 
-Write Vue SPA, React SPA, traditional web page with jQuery in one project
+It's just a template of vue-cli, details see [docs](https://github.com/vuejs/vue-cli/tree/master).
 
-- Include Vue, Vuex, Vue-router, axios
-- Jade for both page and Vue SFC
-- Stylus for both page and Vue SFC
-- Proxy and API mock supported
-- Vue i18n supported
-- React supported
-- ElementUI
-
-
-Install
-====
-```bash
-#init project
-vue init lingobus/mpa-vue-template <project-name>
-cd <project-name>
-
-#start dev server
-npm start
-
-#build for production
-npm run release
+use it with `vue-cli`:
+```shell
+$ vue init username/repo my-project
 ```
-
-More
-====
-[Yeoman Generators for vue-mpa-template generated projects](https://github.com/lingobus/generator-mpa)
-
-Licence
-====
-Mozilla

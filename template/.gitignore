@@ -20,3 +20,4 @@ proxy-table.dev.js
 #project
 /views
 .vscode
+.idea

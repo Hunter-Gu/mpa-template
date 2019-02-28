@@ -1,16 +1,14 @@
 # {{ name }}
+{{ description }}
 
-> {{ description }}
-
-## Build Setup
-
-``` bash
-# install dependencies
-npm install
-
-# serve with hot reload
-npm start
-
-# build for production
-npm run release
+```shell
+$ npm start
+$ npm run start:nohmr
+$ npm run start:only-js
+$ npm run build
+$ npm run serve:build
+{{#if_eq needDoc true}}
+$ npm run doc
+$ npm run serve:doc
+{{/if_eq}}
 ```
