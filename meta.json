@@ -9,7 +9,7 @@
       "type": "string",
       "required": true,
       "label": "Project description",
-      "default": "A Vue.js project"
+      "default": "A MPA project"
     },
     "author": {
       "type": "string",
@@ -31,6 +31,10 @@
       "default": 8080,
       "label": "dev server port"
     },
+    "needDoc": {
+      "type": "confirm",
+      "label": "Do you want to use doc"
+    },
     "useproxy": {
       "type": "confirm",
       "label": "Do you want to enable proxy table?"
@@ -40,6 +44,10 @@
       "label": "Do you want to use a sitemap?"
     }
   },
-  "skipInterpolation": "src/js/lib/*.js",
+  "filters" : {
+    "proxy.*": "useproxy",
+    "src/common/html/sitemap.xml": "sitemap",
+    "docs/**/*": "needDoc"
+  },
   "completeMessage": "{{#inPlace}}To get started:\n\n  npm install\n  npm start{{else}}To get started:\n\n  cd {{destDirName}}\n  npm install\n  npm start{{/inPlace}}"
 }
