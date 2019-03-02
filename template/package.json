@@ -17,7 +17,6 @@
     "express": "^4.16.4",
     "express-http-proxy": "^1.5.1",
     "express-useragent": "^1.0.12",
-    "stylus": "^0.54.5",
     "@babel/runtime": "^7.3.4"
   },
   "devDependencies": {
@@ -48,6 +47,7 @@
     "postcss-loader": "^3.0.0",
     "prettyjson": "^1.2.1",
     "style-loader": "^0.23.1",
+    "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
     "thread-loader": "^2.1.2",
     "url-loader": "^1.1.2",
