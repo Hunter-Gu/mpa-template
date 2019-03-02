@@ -17,12 +17,14 @@
     "express": "^4.16.4",
     "express-http-proxy": "^1.5.1",
     "express-useragent": "^1.0.12",
-    "stylus": "^0.54.5"
+    "stylus": "^0.54.5",
+    "@babel/runtime": "^7.3.4"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/plugin-transform-runtime": "^7.3.4",
     "babel-loader": "^8.0.5",
     "babel-watch": "^7.0.0",
     "clean-webpack-plugin": "^1.0.1",
