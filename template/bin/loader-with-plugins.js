@@ -18,7 +18,9 @@ exports.getVueLoaderWithPlugins = function () {
   }
 }
 
-const BaseLoader = ['css-loader', 'stylus-loader'] // ['postcss-loader', 'css-loader', 'stylus-loader']
+const getBaseLoader = function (isdev) {
+  return isdev ? ['css-loader', 'stylus-loader'] : ['css-loader', 'postcss-loader', 'stylus-loader']
+}
 exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugin) {
   const test = /\.styl$/
 
@@ -27,7 +29,7 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
       loaders: {
         test,
         loader: ExtractTextWebpackPlugin.extract({
-          use: BaseLoader,
+          use: getBaseLoader(isdev),
           remove: false
         })
       },
@@ -37,7 +39,7 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
     return {
       loaders: {
         test,
-        use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+        use: ["thread-loader", 'style-loader'].concat(getBaseLoader(isdev))
       },
       plugins: []
     }
@@ -55,7 +57,7 @@ exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
         test,
         use: ["thread-loader", {
           loader: MiniCssExtractPlugin.loader
-        }].concat(BaseLoader)
+        }].concat(getBaseLoader(isdev))
       },
       plugins: [ new MiniCssExtractPlugin(getFilename(isdev, true, 'css')), new OptimizeCssAssetsPlugin() ]
     }
@@ -63,7 +65,7 @@ exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
     return {
       loaders: {
         test,
-        use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+        use: ["thread-loader", 'style-loader'].concat(getBaseLoader(isdev))
       },
       plugins: []
     }
