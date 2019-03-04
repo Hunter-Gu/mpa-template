@@ -8,6 +8,7 @@ const { getFilesByExt, getFilename } = require('./utils')
 
 const configs = []
 
+const pugLoader = loaders.getPugLoaders()
 const jsLoader = loaders.getJsLoaders(cache)
 const imgLoader = loaders.getImgLoaders(isdev)
 const fontLoader = loaders.getFontLoaders(isdev)
@@ -39,7 +40,7 @@ configs.push(Object.assign({}, base, {
   },
   externals: config.externals,
   module: {
-    rules: [jsLoader, stylLoaderMaybeWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loaders]
+    rules: [pugLoader, jsLoader, stylLoaderMaybeWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loaders]
   },
   plugins: [definePlugin, cleanPlugin, copyPlugin, ...vueLoaderWithPlugins.plugins, ...stylLoaderMaybeWithPlugins.plugins]
 }))

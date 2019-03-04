@@ -10,6 +10,13 @@ threadLoader.warmup({
   'vue-loader'
 ]);
 
+exports.getPugLoaders = function () {
+  return {
+    test: /\.pug$/,
+    loader: 'pug-plain-loader'
+  }
+}
+
 exports.getJsLoaders = function (cacheDir = true) {
   return {
     test: /\.jsx?$/,
