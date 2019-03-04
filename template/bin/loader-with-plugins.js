@@ -7,7 +7,7 @@ const { getFilename } = require('./utils')
 exports.getVueLoaderWithPlugins = function () {
   const VueLoaderPlugin = require('vue-loader/lib/plugin')
   return {
-    loader: {
+    loaders: {
       test: /\.vue$/,
       use: ["thread-loader", {
         loader: 'vue-loader',
@@ -24,7 +24,7 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
 
   if (withPlugin) {
     return {
-      loader: {
+      loaders: {
         test,
         loader: ExtractTextWebpackPlugin.extract({
           use: BaseLoader,
@@ -35,8 +35,11 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
     }
   } else {
     return {
-      test,
-      use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+      loaders: {
+        test,
+        use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+      },
+      plugins: []
     }
   }
 }
@@ -48,7 +51,7 @@ exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
 
   if (withPlugin) {
     return {
-      loader: {
+      loaders: {
         test,
         use: ["thread-loader", {
           loader: MiniCssExtractPlugin.loader
@@ -58,8 +61,11 @@ exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
     }
   } else {
     return {
-      test,
-      use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+      loaders: {
+        test,
+        use: ["thread-loader", 'style-loader'].concat(BaseLoader)
+      },
+      plugins: []
     }
   }
 }
@@ -79,7 +85,7 @@ exports.getJadeLoaderWithPlugins = function (isdev, assetsRoot) {
   let manifest = null
 
   return {
-    loader: {
+    loaders: {
       test: test,
       loader: ExtractTextWebpackPlugin.extract({
         use: {

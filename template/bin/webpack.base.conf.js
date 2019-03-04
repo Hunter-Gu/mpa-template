@@ -9,7 +9,6 @@ const { getFilesByExt, getFilename } = require('./utils')
 const configs = []
 
 const jsLoader = loaders.getJsLoaders(cache)
-const stylLoader = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, false)
 const imgLoader = loaders.getImgLoaders(isdev)
 const fontLoader = loaders.getFontLoaders(isdev)
 const mediaLoader = loaders.getMediaLoaders(isdev)
@@ -19,7 +18,7 @@ const definePlugin = plugins.getDefinePlugin()
 const cleanPlugin = plugins.getCleanPlugin(assetsRoot)
 
 const vueLoaderWithPlugins = loaderWithPlugins.getVueLoaderWithPlugins()
-const stylLoaderAndPlugins = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, true)
+const stylLoaderMaybeWithPlugins = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, !isdev)
 const stlyLoaderWithPluginsAsEntryHandler = loaderWithPlugins.getStlyLoaderMaybeWithPluginsAsEntryHandler(isdev, true)
 const jadeLoaderWithPlugins = loaderWithPlugins.getJadeLoaderWithPlugins(isdev, assetsRoot)
 
@@ -40,9 +39,9 @@ configs.push(Object.assign({}, base, {
   },
   externals: config.externals,
   module: {
-    rules: [jsLoader, stylLoader, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loader]
+    rules: [jsLoader, stylLoaderMaybeWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loaders]
   },
-  plugins: [definePlugin, cleanPlugin, copyPlugin, ...vueLoaderWithPlugins.plugins]
+  plugins: [definePlugin, cleanPlugin, copyPlugin, ...vueLoaderWithPlugins.plugins, ...stylLoaderMaybeWithPlugins.plugins]
 }))
 
 // stylus
@@ -54,7 +53,7 @@ configs.push(Object.assign({}, base, {
     publicPath
   },
   module: {
-    rules: [stlyLoaderWithPluginsAsEntryHandler.loader, imgLoader, fontLoader]
+    rules: [stlyLoaderWithPluginsAsEntryHandler.loaders, imgLoader, fontLoader]
   },
   plugins: [...stlyLoaderWithPluginsAsEntryHandler.plugins]
 }))
@@ -68,9 +67,9 @@ configs.push(Object.assign({}, base, {
     publicPath
   },
   module: {
-    rules: [jadeLoaderWithPlugins.loader, imgLoader, fontLoader, mediaLoader, stylLoader]
+    rules: [jadeLoaderWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, stylLoaderMaybeWithPlugins.loaders]
   },
-  plugins: [...jadeLoaderWithPlugins.plugins]
+  plugins: [...jadeLoaderWithPlugins.plugins, ...stylLoaderMaybeWithPlugins.plugins]
 }))
 
 module.exports = configs
