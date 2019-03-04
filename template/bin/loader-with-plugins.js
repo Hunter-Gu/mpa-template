@@ -22,7 +22,7 @@ const getBaseLoader = function (isdev) {
   return isdev ? ['css-loader', 'stylus-loader'] : ['css-loader', 'postcss-loader', 'stylus-loader']
 }
 exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugin) {
-  const test = /\.styl$/
+  const test = /\.styl(us)?$/
 
   if (withPlugin) {
     return {
@@ -47,7 +47,7 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
 }
 
 exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
-  const test = /\.styl$/
+  const test = /\.styl(us)?$/
   const MiniCssExtractPlugin = require("mini-css-extract-plugin");
   const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
