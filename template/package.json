@@ -6,7 +6,7 @@
     "start": "cross-env HMR=true NODE_ENV=development PARALLEL=true WEBPACK=all babel-watch ./app.js",
     "start:nohmr": "cross-env NODE_ENV=development WEBPACK=all babel-watch ./app.js",
     "start:onlyjs": "cross-env NODE_ENV=development WEBPACK=js babel-watch ./app.js",
-    "build": "cross-env NODE_ENV=production PARALLEL=true node ./bin/build.js",
+    "build": "cross-env NODE_ENV=production node ./bin/build.js",
     "serve:build": "npm run build && cross-env NODE_ENV=production node ./app.js"{{#if_eq needDoc true}},
     "doc": "docsify serve ./docs",
     "serve:doc": ""{{/if_eq}}
