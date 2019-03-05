@@ -19,7 +19,7 @@ const definePlugin = plugins.getDefinePlugin()
 const cleanPlugin = plugins.getCleanPlugin(assetsRoot)
 
 const vueLoaderWithPlugins = loaderWithPlugins.getVueLoaderWithPlugins()
-const stylLoaderMaybeWithPlugins = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, !isdev)
+const stylLoaderMaybeWithPlugins = loaderWithPlugins.getStylLoaderMaybeWithPlugins(isdev, false)
 const stlyLoaderWithPluginsAsEntryHandler = loaderWithPlugins.getStlyLoaderMaybeWithPluginsAsEntryHandler(isdev, true)
 const jadeLoaderWithPlugins = loaderWithPlugins.getJadeLoaderWithPlugins(isdev, assetsRoot)
 

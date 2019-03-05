@@ -21,6 +21,7 @@ exports.getVueLoaderWithPlugins = function () {
 const getBaseLoader = function (isdev) {
   return isdev ? ['css-loader', 'stylus-loader'] : ['css-loader', 'postcss-loader', 'stylus-loader']
 }
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugin) {
   const test = /\.styl(us)?$/
 
@@ -33,7 +34,7 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
           remove: false
         })
       },
-      plugins: [ new ExtractTextWebpackPlugin(getFilename(isdev, true, 'css')) ]
+      plugins: [ new ExtractTextWebpackPlugin(getFilename(isdev, true, 'css')), new OptimizeCssAssetsPlugin() ]
     }
   } else {
     return {
@@ -49,7 +50,6 @@ exports.getStlyLoaderMaybeWithPluginsAsEntryHandler = function (isdev, withPlugi
 exports.getStylLoaderMaybeWithPlugins = function (isdev, withPlugin) {
   const test = /\.styl(us)?$/
   const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-  const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
   if (withPlugin) {
     return {
