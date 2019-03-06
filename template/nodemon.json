@@ -1,0 +1,8 @@
+{
+  "verbose": true,
+  "ignore": ["src", "bin", "build", "node_modules"],
+  "execMap": {
+    "rb": "ruby",
+    "pde": "processing --sketch={{pwd}} --run"
+  }
+}
