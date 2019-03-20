@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "{{ description }}",
   "scripts": {
-    "start": "cross-env HMR=true NODE_ENV=development PARALLEL=true WEBPACK=all nodemon -e js app.js",
+    "start": "cross-env HMR=true NODE_ENV=development PARALLEL=true WEBPACK=all node app.js",
     "start:nohmr": "cross-env NODE_ENV=development WEBPACK=all babel-watch ./app.js",
     "start:onlyjs": "cross-env NODE_ENV=development WEBPACK=js babel-watch ./app.js",
     "build": "cross-env NODE_ENV=production node ./bin/build.js",
@@ -26,7 +26,6 @@
     "@babel/plugin-proposal-export-default-from": "^7.2.0",
     "@babel/plugin-transform-runtime": "^7.3.4",
     "babel-loader": "^8.0.5",
-    "nodemon": "^1.18.10",
     "clean-webpack-plugin": "^1.0.1",
     "copy-webpack-plugin": "^5.0.0",
     "cross-env": "^5.2.0",
