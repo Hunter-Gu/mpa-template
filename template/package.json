@@ -7,6 +7,7 @@
     "start:nohmr": "cross-env NODE_ENV=development WEBPACK=all babel-watch ./app.js",
     "start:onlyjs": "cross-env NODE_ENV=development WEBPACK=js babel-watch ./app.js",
     "build": "cross-env NODE_ENV=production node ./bin/build.js",
+    "lint": "eslint --ext .js,.vue src",
     "serve:build": "npm run build && cross-env NODE_ENV=production node ./app.js"{{#if_eq needDoc true}},
     "doc": "docsify serve ./docs",
     "serve:doc": ""{{/if_eq}}
@@ -42,6 +43,10 @@
     "friendly-errors-webpack-plugin": "^1.7.0",
     "jade": "^1.11.0",
     "jade-url-replace-loader": "^1.0.5",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^6.5.1",
+    "eslint-loader": "^3.0.2",
+    "eslint-plugin-vue": "^5.2.3",
     "mini-css-extract-plugin": "^0.5.0",
     "morgan": "^1.9.1",
     "optimize-css-assets-webpack-plugin": "^5.0.1",

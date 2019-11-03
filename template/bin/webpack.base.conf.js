@@ -10,6 +10,7 @@ const configs = []
 
 const pugLoader = loaders.getPugLoaders()
 const jsLoader = loaders.getJsLoaders(cache)
+const eslintLoader = loaders.getEslintLoader()
 const imgLoader = loaders.getImgLoaders(isdev)
 const fontLoader = loaders.getFontLoaders(isdev)
 const mediaLoader = loaders.getMediaLoaders(isdev)
@@ -41,7 +42,7 @@ configs.push(Object.assign({}, base, {
   },
   externals: config.externals,
   module: {
-    rules: [tsLoaderWithPlugins.loaders, pugLoader, jsLoader, stylLoaderMaybeWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loaders]
+    rules: [tsLoaderWithPlugins.loaders, pugLoader, eslintLoader, jsLoader, stylLoaderMaybeWithPlugins.loaders, imgLoader, fontLoader, mediaLoader, vueLoaderWithPlugins.loaders]
   },
   plugins: [definePlugin, cleanPlugin, copyPlugin, ...vueLoaderWithPlugins.plugins, ...stylLoaderMaybeWithPlugins.plugins, ...tsLoaderWithPlugins.plugins]
 }))
